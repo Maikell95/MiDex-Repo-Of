@@ -25,7 +25,7 @@ import TypeBadge from '../components/TypeBadge';
 import type { RootStackParamList } from '../navigation';
 import { colors, tierColor, typeColor } from '../theme';
 import type { LearnedMove } from '../types';
-import { abilityList, dexNumber, statTotal, toId } from '../utils';
+import { abilityList, dexNumber, statTotal, stripHtml, toId } from '../utils';
 import { STAT_ORDER } from '../utils';
 
 // Nota: en la New Architecture (Fabric) LayoutAnimation ya está activo por defecto,
@@ -73,11 +73,6 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-// Los textos de Smogon traen etiquetas <em>, saltos, etc. Los limpiamos antes de traducir.
-function stripTags(html?: string): string {
-  if (!html) return '';
-  return html.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
-}
 
 export default function PokemonDetailScreen({ route, navigation }: Props) {
   const { id, entry } = route.params;
@@ -97,14 +92,20 @@ export default function PokemonDetailScreen({ route, navigation }: Props) {
     // traducida al español. Si no hay efecto preciso, usamos el texto de juego (flavor).
     loadAbilitiesEs()
       .then(async (map) => {
-        setAbilitiesEs(map);
+        setAbilitiesEs(map); // el mapa se fija ya: los nombres/flavor se ven aunque falle la traducción
         const out: Record<string, string> = {};
         await Promise.all(
           abilityList(entry).map(async ({ name }) => {
             const key = toId(name);
             const info = map.get(key);
-            if (info?.effectEn) out[key] = await translateEs(info.effectEn);
-            else if (info?.flavorEs) out[key] = info.flavorEs;
+            if (!info) return;
+            if (info.effectEn) {
+              // Traducción online del efecto preciso; si falla/queda vacía, usamos flavor ES o el inglés.
+              const t = await translateEs(info.effectEn).catch(() => '');
+              out[key] = t || info.flavorEs || info.effectEn;
+            } else if (info.flavorEs) {
+              out[key] = info.flavorEs;
+            }
           }),
         );
         setAbilityEffects(out);
@@ -120,7 +121,7 @@ export default function PokemonDetailScreen({ route, navigation }: Props) {
       try {
         const res = await getAnalysis(entry);
         if (res) {
-          const overview = await translateEs(stripTags(res.summary));
+          const overview = await translateEs(stripHtml(res.summary));
           setComp({ label: res.label, overview, format: res.format, name: res.name });
         } else {
           setComp(null);

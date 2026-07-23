@@ -63,3 +63,22 @@ export function abilityList(entry: DexEntry): Array<{ name: string; hidden: bool
 export function toId(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]/g, '');
 }
+
+// Entidades HTML frecuentes en los textos de Smogon.
+const HTML_ENTITIES: Record<string, string> = {
+  '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'", '&#039;': "'",
+  '&apos;': "'", '&nbsp;': ' ', '&mdash;': '—', '&ndash;': '–', '&hellip;': '…',
+};
+
+// Limpia el texto de análisis de Smogon: quita etiquetas HTML, decodifica entidades
+// (incluidas las numéricas &#123;) y normaliza los espacios.
+export function stripHtml(html?: string): string {
+  if (!html) return '';
+  return html
+    .replace(/<[^>]+>/g, '')
+    .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCodePoint(parseInt(n, 16)))
+    .replace(/&[a-z]+;/gi, (e) => HTML_ENTITIES[e.toLowerCase()] ?? e)
+    .replace(/\s+/g, ' ')
+    .trim();
+}

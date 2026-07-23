@@ -20,7 +20,9 @@ import {
   type RankedMon,
 } from '../api/competitive';
 import { getMovePool } from '../api/dex';
+import { loadItemIndex, resolveItem, type ItemIndex } from '../api/itemIndex';
 import FormatBars from '../components/FormatBars';
+import ItemIcon from '../components/ItemIcon';
 import PokeImage from '../components/PokeImage';
 import ScreenBackground from '../components/ScreenBackground';
 import TypeBadge from '../components/TypeBadge';
@@ -29,7 +31,7 @@ import type { TeamStackParamList } from '../navigation';
 import { getTeam, HAZARD_REMOVAL, HAZARD_SETTERS, upsertTeam, type SavedTeam, type TeamMember } from '../team';
 import { colors } from '../theme';
 import type { StatKey } from '../types';
-import { teamTypeAnalysis } from '../typeChart';
+import { ALL_TYPES, defensiveMultipliers } from '../typeChart';
 import { spriteCandidates, STAT_ORDER } from '../utils';
 
 type Props = NativeStackScreenProps<TeamStackParamList, 'TeamEdit'>;
@@ -43,6 +45,11 @@ export default function TeamBuilderScreen({ route, navigation }: Props) {
   const [formats, setFormats] = useState<FormatInfo[]>([]);
   const [suggestions, setSuggestions] = useState<RankedMon[]>([]);
   const [building, setBuilding] = useState(false);
+  const [itemIdx, setItemIdx] = useState<ItemIndex | null>(null); // para el icono del objeto en cada miembro
+
+  useEffect(() => {
+    loadItemIndex().then(setItemIdx).catch(() => {});
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -97,13 +104,23 @@ export default function TeamBuilderScreen({ route, navigation }: Props) {
     }
   };
 
+  // Por cada tipo atacante: qué miembros son débiles (x2+) y cuáles resisten (<x1).
   const analysis = useMemo(() => {
     if (!team) return [];
-    return teamTypeAnalysis(team.members.map((m) => m.entry.types))
-      .filter((s) => s.weak > 0 || s.resist > 0)
-      .sort((a, b) => b.weak - a.weak);
+    return ALL_TYPES.map((type) => {
+      const weak: TeamMember[] = [];
+      const resist: TeamMember[] = [];
+      for (const m of team.members) {
+        const mult = defensiveMultipliers(m.entry.types)[type];
+        if (mult >= 2) weak.push(m);
+        else if (mult < 1) resist.push(m);
+      }
+      return { type, weak, resist };
+    })
+      .filter((s) => s.weak.length > 0 || s.resist.length > 0)
+      .sort((a, b) => b.weak.length - a.weak.length);
   }, [team]);
-  const shared = analysis.filter((s) => s.weak >= 2).length;
+  const shared = analysis.filter((s) => s.weak.length >= 2).length;
 
   // Control de trampas: qué Pokémon APRENDEN cada mov de utilidad, y si lo tienen asignado.
   type Who = { name: string; assigned: boolean };
@@ -226,6 +243,10 @@ export default function TeamBuilderScreen({ route, navigation }: Props) {
               <View style={styles.mInfo}>
                 <View style={styles.mTop}>
                   <Text style={styles.mName} numberOfLines={1}>{m.entry.name}</Text>
+                  {(() => {
+                    const it = resolveItem(itemIdx, m.set?.item);
+                    return it ? <ItemIcon spritenum={it.spritenum} slug={it.slug} size={20} /> : null;
+                  })()}
                   {m.entry.types.map((t) => (
                     <TypeBadge key={t} type={t} small />
                   ))}
@@ -309,14 +330,26 @@ export default function TeamBuilderScreen({ route, navigation }: Props) {
                 ? `⚠ ${shared} tipo(s) golpean a 2+ miembros.`
                 : 'Sin debilidades compartidas graves.'}
             </Text>
+            {/* Leyenda: débiles a la izquierda (rojo), resisten a la derecha (verde) */}
+            <View style={styles.aHead}>
+              <Text style={[styles.aHeadTxt, { color: colors.accent }]}>◀ Débiles</Text>
+              <Text style={[styles.aHeadTxt, { color: '#3FBF6F', textAlign: 'right' }]}>Resisten ▶</Text>
+            </View>
             {analysis.map((s) => (
               <View key={s.type} style={styles.aRow}>
-                <TypeBadge type={s.type} small />
-                <View style={styles.aCounts}>
-                  <Text style={[styles.weak, s.weak >= 2 && styles.weakBad]}>
-                    {s.weak > 0 ? `${s.weak} débil${s.weak > 1 ? 'es' : ''}${s.weak >= 2 ? ' ⚠' : ''}` : '—'}
-                  </Text>
-                  <Text style={styles.resist}>{s.resist > 0 ? `${s.resist} resisten` : ''}</Text>
+                <View style={[styles.aSide, styles.aWeakSide]}>
+                  {s.weak.map((m) => (
+                    <PokeImage key={m.id} sources={spriteCandidates(m.entry)} style={styles.aMini} />
+                  ))}
+                  {s.weak.length >= 2 ? <Text style={styles.aWarn}>⚠</Text> : null}
+                </View>
+                <View style={styles.aTypeMid}>
+                  <TypeBadge type={s.type} small />
+                </View>
+                <View style={[styles.aSide, styles.aResistSide]}>
+                  {s.resist.map((m) => (
+                    <PokeImage key={m.id} sources={spriteCandidates(m.entry)} style={styles.aMini} />
+                  ))}
                 </View>
               </View>
             ))}
@@ -430,9 +463,13 @@ const styles = StyleSheet.create({
   sugUse: { color: colors.accent, fontSize: 10, fontWeight: '800' },
 
   dim: { color: colors.textDim, fontSize: 13, lineHeight: 19 },
-  aRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6, borderBottomWidth: 1, borderColor: colors.border },
-  aCounts: { flex: 1, flexDirection: 'row', justifyContent: 'space-between', marginLeft: 10 },
-  weak: { color: colors.textDim, fontSize: 13, fontWeight: '700' },
-  weakBad: { color: colors.accent, fontWeight: '900' },
-  resist: { color: colors.textDim, fontSize: 12 },
+  aHead: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 4, marginBottom: 2, paddingHorizontal: 4 },
+  aHeadTxt: { flex: 1, fontSize: 11, fontWeight: '800' },
+  aRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 4, borderBottomWidth: 1, borderColor: colors.border },
+  aSide: { flex: 1, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 3, minHeight: 34, borderRadius: 8, paddingHorizontal: 4, paddingVertical: 2 },
+  aWeakSide: { justifyContent: 'flex-start', backgroundColor: colors.accent + '18' },
+  aResistSide: { justifyContent: 'flex-end', backgroundColor: '#3FBF6F22' },
+  aTypeMid: { width: 66, alignItems: 'center' },
+  aMini: { width: 30, height: 30 },
+  aWarn: { color: colors.accent, fontSize: 13, fontWeight: '900', marginLeft: 2 },
 });

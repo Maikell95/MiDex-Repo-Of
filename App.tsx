@@ -5,6 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
+import UpdateBanner from './src/components/UpdateBanner';
 import CompetitiveDetailScreen from './src/screens/CompetitiveDetailScreen';
 import CompetitiveListScreen from './src/screens/CompetitiveListScreen';
 import DamageCalcScreen from './src/screens/DamageCalcScreen';
@@ -55,7 +56,7 @@ const stackScreenOptions = {
 function PokedexStack() {
   return (
     <PokeStack.Navigator screenOptions={stackScreenOptions}>
-      <PokeStack.Screen name="Pokedex" component={PokedexListScreen} options={{ title: 'Pkdx · Pokédex' }} />
+      <PokeStack.Screen name="Pokedex" component={PokedexListScreen} options={{ title: 'Pokédex' }} />
       <PokeStack.Screen
         name="Detalle"
         component={PokemonDetailScreen}
@@ -153,6 +154,7 @@ export default function App() {
       <NavigationContainer theme={navTheme}>
         <RootTabs />
       </NavigationContainer>
+      <UpdateBanner />
     </SafeAreaProvider>
   );
 }

@@ -167,6 +167,17 @@ function extractAbilityDesc(txt: string, id: string): string | undefined {
   }
 }
 
+// Habilidades nuevas de las megas de Leyendas Z-A ("Future"): PokéAPI no las tiene, así
+// que las aportamos aquí para que no queden sin descripción (ni al refrescar los datos).
+const FUTURE_ABILITIES_ES: Record<string, AbilityEs> = {
+  dragonize: { name: 'Dragonize', flavorEs: 'Convierte los movimientos de tipo Normal de este Pokémon en tipo Dragón y aumenta su potencia ×1,2.' },
+  eelevate: { name: 'Eelevate', flavorEs: 'Inmuniza a este Pokémon contra los ataques de tipo Tierra (y contra Púas, Púas Tóxicas, Red Viscosa y Trampa Arena). Además, cuando debilita a un rival, sube 1 nivel su mejor característica.' },
+  firemane: { name: 'Fire Mane', flavorEs: 'Multiplica ×1,5 la característica ofensiva de este Pokémon cuando usa un ataque de tipo Fuego.' },
+  megasol: { name: 'Mega Sol', flavorEs: 'Los movimientos de este Pokémon actúan como si el sol (Día Soleado) estuviera activo.' },
+  piercingdrill: { name: 'Piercing Drill', flavorEs: 'Los movimientos de contacto de este Pokémon ignoran la protección del objetivo, pero infligen 1/4 del daño habitual.' },
+  spicyspray: { name: 'Spicy Spray', flavorEs: 'Si este Pokémon recibe un ataque, el atacante sufre quemadura.' },
+};
+
 async function freshAbilities(): Promise<Record<string, AbilityEs>> {
   const [d, sdText] = await Promise.all([
     gql<{
@@ -194,17 +205,17 @@ async function freshAbilities(): Promise<Record<string, AbilityEs>> {
     const effectEn = clean(a.abilityeffecttexts[0]?.short_effect) || (sdText ? extractAbilityDesc(sdText, id) : undefined);
     out[id] = { name, flavorEs: clean(a.abilityflavortexts[0]?.flavor_text), effectEn };
   }
-  return out;
+  return { ...FUTURE_ABILITIES_ES, ...out }; // las Future primero; PokéAPI puede sobrescribir si coincide
 }
 
 let abilityEsPromise: Promise<Map<string, AbilityEs>> | null = null;
 export function loadAbilitiesEs(): Promise<Map<string, AbilityEs>> {
   if (!abilityEsPromise) {
-    abilityEsPromise = offlineJson<Record<string, AbilityEs>>(
-      'abilitiesEs',
-      () => require('../../assets/data/abilitiesEs.json'),
-      freshAbilities,
-    ).then((obj) => new Map(Object.entries(obj)));
+    const bundled = require('../../assets/data/abilitiesEs.json') as Record<string, AbilityEs>;
+    abilityEsPromise = offlineJson<Record<string, AbilityEs>>('abilitiesEs', () => bundled, freshAbilities)
+      // Fusionamos los datos empaquetados como respaldo: la caché/fresh gana, pero el
+      // bundle rellena lo que falte (p. ej. una caché vieja sin las habilidades nuevas).
+      .then((obj) => new Map(Object.entries({ ...bundled, ...obj })));
   }
   return abilityEsPromise;
 }

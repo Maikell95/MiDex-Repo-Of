@@ -19,6 +19,7 @@ import ItemIcon from '../components/ItemIcon';
 import PokeImage from '../components/PokeImage';
 import ScreenBackground from '../components/ScreenBackground';
 import TypeBadge from '../components/TypeBadge';
+import { loadCompetitiveLocale, type CompLocale } from '../localize';
 import { NATURES } from '../natures';
 import { colors } from '../theme';
 import { ALL_TYPES, defensiveMultipliers } from '../typeChart';
@@ -99,11 +100,13 @@ export default function DamageCalcScreen() {
   const [query, setQuery] = useState('');
   const [itemQuery, setItemQuery] = useState('');
   const [items, setItems] = useState<ItemOption[]>([]);
+  const [loc, setLoc] = useState<CompLocale | null>(null); // traducción de habilidades a ES
   const [copied, setCopied] = useState(false);
   const [detailKey, setDetailKey] = useState<string | null>(null); // mov cuyo cálculo se muestra
 
   useEffect(() => {
     loadSpeciesList().then(setSpecies);
+    loadCompetitiveLocale().then(setLoc).catch(() => {});
     // Objetos competitivos (curados) cruzados con los que reconoce el motor.
     loadCompetitiveItems()
       .then((groups) => {
@@ -271,6 +274,7 @@ export default function DamageCalcScreen() {
           setSide={setAttacker}
           offensive
           items={items}
+          abilityEs={loc ? loc.ability : (n) => n}
           onPick={() => { setQuery(''); setPicking('attacker'); }}
           onPickItem={() => { setItemQuery(''); setPickingItem('attacker'); }}
           moveSlot={
@@ -327,6 +331,7 @@ export default function DamageCalcScreen() {
           side={defender}
           setSide={setDefender}
           items={items}
+          abilityEs={loc ? loc.ability : (n) => n}
           onPick={() => { setQuery(''); setPicking('defender'); }}
           onPickItem={() => { setItemQuery(''); setPickingItem('defender'); }}
         />
@@ -523,6 +528,7 @@ function SideCard({
   setSide,
   offensive,
   items,
+  abilityEs,
   onPick,
   onPickItem,
   moveSlot,
@@ -532,6 +538,7 @@ function SideCard({
   setSide: (s: Side) => void;
   offensive?: boolean;
   items: ItemOption[];
+  abilityEs: (n: string) => string; // traduce el nombre de la habilidad a ES (se guarda en inglés)
   onPick: () => void;
   onPickItem: () => void;
   moveSlot?: React.ReactNode;
@@ -604,7 +611,7 @@ function SideCard({
           {side.entry.abilities ? (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipsRow}>
               {Object.values(side.entry.abilities).filter(Boolean).map((ab) => (
-                <Chip key={ab} label={ab} on={side.ability === ab} onPress={() => setSide({ ...side, ability: ab })} />
+                <Chip key={ab} label={abilityEs(ab)} on={side.ability === ab} onPress={() => setSide({ ...side, ability: ab })} />
               ))}
             </ScrollView>
           ) : null}

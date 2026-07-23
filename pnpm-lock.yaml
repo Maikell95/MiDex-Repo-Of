@@ -35,12 +35,18 @@ importers:
       expo:
         specifier: ~57.0.7
         version: 57.0.7(@babel/core@7.29.7(supports-color@8.1.1))(@expo/dom-webview@57.0.1)(react-native@0.86.0(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1)(typescript@6.0.3)
+      expo-application:
+        specifier: ~57.0.2
+        version: 57.0.2(expo@57.0.7)
       expo-clipboard:
         specifier: ~57.0.1
         version: 57.0.1(expo@57.0.7)(react-native@0.86.0(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)
       expo-file-system:
         specifier: ~57.0.1
         version: 57.0.1(expo@57.0.7)(react-native@0.86.0(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.2.3)(supports-color@8.1.1))
+      expo-intent-launcher:
+        specifier: ~57.0.1
+        version: 57.0.1(expo@57.0.7)
       expo-linear-gradient:
         specifier: ~57.0.1
         version: 57.0.1(expo@57.0.7)(react-native@0.86.0(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)
@@ -1671,6 +1677,11 @@ packages:
   exec-async@2.2.0:
     resolution: {integrity: sha512-87OpwcEiMia/DeiKFzaQNBNFeN3XkkpYIh9FyOqq5mS2oKv3CBE67PXoEKcr6nodWdXNogTiQ0jE2NGuoffXPw==}
 
+  expo-application@57.0.2:
+    resolution: {integrity: sha512-q31YwcXyymviAmdrtDfAg3Dld4VMxLCNAfgMHip7vZpPX4lzF/AfwsywqBJUAjQnJknzaNAkzqvMVjO5XmKYDA==}
+    peerDependencies:
+      expo: '*'
+
   expo-asset@57.0.6:
     resolution: {integrity: sha512-n3Yb1VxcP+BMRTyC4R1x2It4+m5EDkNXiVCHGWbnIREQUUkMs2Yeul7D5qfFWAYtIn2Z3hbGMndwU6Az1FPSEg==}
     peerDependencies:
@@ -1703,6 +1714,11 @@ packages:
       expo: '*'
       react: '*'
       react-native: '*'
+
+  expo-intent-launcher@57.0.1:
+    resolution: {integrity: sha512-BYiPEOUeW3AkW/uxEESbS2UBw9LasJ8Heb6A8kF9Ueh6pqrXQHMNJFHzfrOP8qZfv9G2e8CTzrtzpN5p0vH5fA==}
+    peerDependencies:
+      expo: '*'
 
   expo-keep-awake@57.0.1:
     resolution: {integrity: sha512-28lkFImeXTS+bhAjuCFV7w7tW5bXg27BJVrxv+nC/nyYa86qEa0oFeHwqol6ha5k4pdVDQgBF09GM4A1k76Ssg==}
@@ -5668,6 +5684,10 @@ snapshots:
 
   exec-async@2.2.0: {}
 
+  expo-application@57.0.2(expo@57.0.7):
+    dependencies:
+      expo: 57.0.7(@babel/core@7.29.7(supports-color@8.1.1))(@expo/dom-webview@57.0.1)(react-native@0.86.0(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1)(typescript@6.0.3)
+
   expo-asset@57.0.6(expo@57.0.7)(react-native@0.86.0(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1)(typescript@6.0.3):
     dependencies:
       '@expo/image-utils': 0.11.3(supports-color@8.1.1)(typescript@6.0.3)
@@ -5704,6 +5724,10 @@ snapshots:
       fontfaceobserver: 2.3.0
       react: 19.2.3
       react-native: 0.86.0(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.2.3)(supports-color@8.1.1)
+
+  expo-intent-launcher@57.0.1(expo@57.0.7):
+    dependencies:
+      expo: 57.0.7(@babel/core@7.29.7(supports-color@8.1.1))(@expo/dom-webview@57.0.1)(react-native@0.86.0(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1)(typescript@6.0.3)
 
   expo-keep-awake@57.0.1(expo@57.0.7)(react@19.2.3):
     dependencies:

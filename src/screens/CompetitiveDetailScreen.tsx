@@ -15,17 +15,12 @@ import { loadCompetitiveLocale, type CompLocale } from '../localize';
 import type { CompetitiveStackParamList } from '../navigation';
 import { colors, typeColor } from '../theme';
 import type { DexEntry } from '../types';
-import { dexNumber, spriteCandidates } from '../utils';
+import { dexNumber, spriteCandidates, stripHtml } from '../utils';
 
 type Props = NativeStackScreenProps<CompetitiveStackParamList, 'CompetitiveDetail'>;
 
 const EV_SHORT: Record<string, string> = { hp: 'PS', atk: 'Atk', def: 'Def', spa: 'AtEsp', spd: 'DefEsp', spe: 'Vel' };
 const EV_ORDER = ['hp', 'atk', 'def', 'spa', 'spd', 'spe'] as const;
-
-function stripTags(html?: string): string {
-  if (!html) return '';
-  return html.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
-}
 
 function formatEvs(evs?: Partial<Record<string, number>>): string {
   if (!evs) return '';
@@ -113,7 +108,7 @@ export default function CompetitiveDetailScreen({ route, navigation }: Props) {
       setLoc(l);
       setView(v);
       setLoading(false);
-      if (d.overview) translateEs(stripTags(d.overview)).then((t) => !cancelled && setOverviewEs(t));
+      if (d.overview) translateEs(stripHtml(d.overview)).then((t) => !cancelled && setOverviewEs(t));
     })();
     return () => {
       cancelled = true;

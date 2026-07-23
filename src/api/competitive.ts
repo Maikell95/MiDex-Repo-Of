@@ -132,11 +132,16 @@ const slugify = (s: string) =>
   s.toLowerCase().replace(/['’.]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
 // Asigna el artId (sprite propio) a las formas, para que regionales/megas no usen el del base.
+// Formas de género: Showdown usa -F/-M; PokéAPI usa -female/-male (Basculegion-F, etc.).
+const genderArtKey = (s: string): string =>
+  s.replace(/(^|-)f(?=-|$)/, '$1female').replace(/(^|-)m(?=-|$)/, '$1male');
+
 function withArt(entry: DexEntry, formArt: Map<string, number>): DexEntry {
   if (!entry.baseSpecies) return entry;
   const s = slugify(entry.name);
   const artId =
     formArt.get(s) ??
+    formArt.get(genderArtKey(s)) ??
     formArt.get(`${s}-breed`) ??
     formArt.get(`${s}-standard`) ??
     formArt.get(`${s}-mask`);

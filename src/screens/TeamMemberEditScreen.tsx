@@ -12,7 +12,9 @@ import {
 } from 'react-native';
 import { getCompetitive, type CompSet } from '../api/competitive';
 import { getLearnedMoves } from '../api/dex';
+import { loadItemIndex, resolveItem, type ItemIndex } from '../api/itemIndex';
 import BottomSheet from '../components/BottomSheet';
+import ItemIcon from '../components/ItemIcon';
 import PokeImage from '../components/PokeImage';
 import ScreenBackground from '../components/ScreenBackground';
 import TypeBadge from '../components/TypeBadge';
@@ -42,10 +44,12 @@ export default function TeamMemberEditScreen({ route }: Props) {
   const [learned, setLearned] = useState<LearnedMove[]>([]);
   const [loc, setLoc] = useState<CompLocale | null>(null);
   const [recommended, setRecommended] = useState<CompSet | undefined>();
-  const [items, setItems] = useState<string[]>([]);
   const [statMoves, setStatMoves] = useState<string[]>([]); // movs por uso, para rellenar huecos
   const [pickSlot, setPickSlot] = useState<number | null>(null);
   const [moveQuery, setMoveQuery] = useState('');
+  const [itemIdx, setItemIdx] = useState<ItemIndex | null>(null); // índice de objetos (icono + lista)
+  const [pickingItem, setPickingItem] = useState(false);
+  const [itemQuery, setItemQuery] = useState('');
 
   const member = team?.members.find((m) => m.id === memberId);
 
@@ -60,10 +64,10 @@ export default function TeamMemberEditScreen({ route }: Props) {
       loadCompetitiveLocale().then(setLoc);
       getCompetitive(m.entry.name, t.format).then((c) => {
         setRecommended(c.sets ? Object.values(c.sets)[0] : undefined);
-        setItems(Object.entries(c.stat?.items ?? {}).sort((a, b) => b[1] - a[1]).slice(0, 12).map(([n]) => n));
         setStatMoves(Object.entries(c.stat?.moves ?? {}).sort((a, b) => b[1] - a[1]).map(([n]) => n));
       });
     });
+    loadItemIndex().then(setItemIdx).catch(() => {});
   }, [teamId, memberId]);
 
   const update = (next: MemberSet) => {
@@ -149,6 +153,12 @@ export default function TeamMemberEditScreen({ route }: Props) {
     const q = moveQuery.trim().toLowerCase();
     return q ? learned.filter((l) => l.nameEs.toLowerCase().includes(q)) : learned;
   }, [learned, moveQuery]);
+
+  const filteredItems = useMemo(() => {
+    const list = itemIdx?.list ?? [];
+    const q = itemQuery.trim().toLowerCase();
+    return q ? list.filter((i) => i.es.toLowerCase().includes(q) || i.slug.includes(q)) : list;
+  }, [itemIdx, itemQuery]);
 
   if (!member || !loc) {
     return (
@@ -302,21 +312,24 @@ export default function TeamMemberEditScreen({ route }: Props) {
           ))}
         </View>
 
-        {/* Objeto */}
+        {/* Objeto: selector completo con buscador e icono (como en la calculadora) */}
         <Text style={styles.section}>Objeto</Text>
-        <View style={styles.wrap}>
-          <Pressable style={[styles.chip, !set.item && styles.chipOn]} onPress={() => update({ ...set, item: undefined })}>
-            <Text style={[styles.chipT, !set.item && styles.chipTOn]}>Ninguno</Text>
-          </Pressable>
-          {items.map((it) => {
-            const on = set.item === it;
-            return (
-              <Pressable key={it} style={[styles.chip, on && styles.chipOn]} onPress={() => update({ ...set, item: it })}>
-                <Text style={[styles.chipT, on && styles.chipTOn]}>{L.item(it)}</Text>
-              </Pressable>
-            );
-          })}
-        </View>
+        {(() => {
+          const sel = resolveItem(itemIdx, set.item);
+          return (
+            <Pressable style={styles.itemBtn} onPress={() => { setItemQuery(''); setPickingItem(true); }}>
+              {set.item ? (
+                <>
+                  {sel ? <ItemIcon spritenum={sel.spritenum} slug={sel.slug} size={26} /> : null}
+                  <Text style={styles.itemName} numberOfLines={1}>{sel?.es ?? L.item(set.item)}</Text>
+                </>
+              ) : (
+                <Text style={styles.itemEmpty}>+ Elegir objeto</Text>
+              )}
+              <Ionicons name="chevron-forward" size={16} color={colors.textDim} style={{ marginLeft: 'auto' }} />
+            </Pressable>
+          );
+        })()}
       </ScrollView>
 
       {/* Hoja selector de movimiento */}
@@ -359,6 +372,40 @@ export default function TeamMemberEditScreen({ route }: Props) {
           </>
         )}
       </BottomSheet>
+
+      {/* Hoja selector de objeto (buscador + icono) */}
+      <BottomSheet visible={pickingItem} onClose={() => setPickingItem(false)}>
+        {(scroll) => (
+          <>
+            <TextInput
+              style={styles.modalSearch}
+              placeholder="Buscar objeto…"
+              placeholderTextColor={colors.textDim}
+              value={itemQuery}
+              onChangeText={setItemQuery}
+            />
+            <FlatList
+              data={filteredItems}
+              keyExtractor={(it) => it.slug}
+              initialNumToRender={16}
+              keyboardShouldPersistTaps="handled"
+              {...scroll}
+              ListHeaderComponent={
+                <Pressable style={styles.itemOpt} onPress={() => { update({ ...set, item: undefined }); setPickingItem(false); }}>
+                  <View style={styles.itemIconPh} />
+                  <Text style={styles.mvOptName}>Ninguno</Text>
+                </Pressable>
+              }
+              renderItem={({ item }) => (
+                <Pressable style={styles.itemOpt} onPress={() => { update({ ...set, item: item.es }); setPickingItem(false); }}>
+                  <ItemIcon spritenum={item.spritenum} slug={item.slug} size={30} />
+                  <Text style={styles.mvOptName}>{item.es}</Text>
+                </Pressable>
+              )}
+            />
+          </>
+        )}
+      </BottomSheet>
     </ScreenBackground>
   );
 }
@@ -377,6 +424,11 @@ const styles = StyleSheet.create({
   recText: { color: '#fff', fontWeight: '800' },
 
   section: { color: colors.text, fontSize: 16, fontWeight: '800', marginTop: 20, marginBottom: 8 },
+  itemBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.card, borderRadius: 10, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 12, paddingVertical: 10 },
+  itemName: { color: colors.text, fontSize: 14, fontWeight: '700' },
+  itemEmpty: { color: colors.textDim, fontSize: 14, fontWeight: '700' },
+  itemOpt: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8, paddingHorizontal: 6, borderBottomWidth: 1, borderColor: colors.border },
+  itemIconPh: { width: 30, height: 30, borderRadius: 6, backgroundColor: colors.cardAlt },
   moveRow: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.card, borderRadius: 10, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 12, paddingVertical: 11, marginBottom: 6 },
   dot: { width: 10, height: 10, borderRadius: 5 },
   moveName: { flex: 1, color: colors.text, fontSize: 14, fontWeight: '700' },

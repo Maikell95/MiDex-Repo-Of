@@ -91,7 +91,16 @@ async function main() {
     if (!m) return undefined;
     try { return JSON.parse(`"${m[1]}"`); } catch { return m[1]; }
   };
-  const abilitiesEs = {};
+  // Habilidades nuevas de las megas de Leyendas Z-A ("Future"): PokéAPI no las tiene.
+  const FUTURE_ABILITIES_ES = {
+    dragonize: { name: 'Dragonize', flavorEs: 'Convierte los movimientos de tipo Normal de este Pokémon en tipo Dragón y aumenta su potencia ×1,2.' },
+    eelevate: { name: 'Eelevate', flavorEs: 'Inmuniza a este Pokémon contra los ataques de tipo Tierra (y contra Púas, Púas Tóxicas, Red Viscosa y Trampa Arena). Además, cuando debilita a un rival, sube 1 nivel su mejor característica.' },
+    firemane: { name: 'Fire Mane', flavorEs: 'Multiplica ×1,5 la característica ofensiva de este Pokémon cuando usa un ataque de tipo Fuego.' },
+    megasol: { name: 'Mega Sol', flavorEs: 'Los movimientos de este Pokémon actúan como si el sol (Día Soleado) estuviera activo.' },
+    piercingdrill: { name: 'Piercing Drill', flavorEs: 'Los movimientos de contacto de este Pokémon ignoran la protección del objetivo, pero infligen 1/4 del daño habitual.' },
+    spicyspray: { name: 'Spicy Spray', flavorEs: 'Si este Pokémon recibe un ataque, el atacante sufre quemadura.' },
+  };
+  const abilitiesEs = { ...FUTURE_ABILITIES_ES };
   for (const a of ad.ability) {
     const name = a.abilitynames[0]?.name;
     if (!name) continue;

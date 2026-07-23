@@ -102,6 +102,12 @@ function slugify(name: string): string {
     .replace(/^-|-$/g, '');
 }
 
+// Formas de género: Showdown usa -F/-M; PokéAPI usa -female/-male (también en megas,
+// p. ej. "meowstic-f-mega" -> "meowstic-female-mega"). Corrige Basculegion-F, Indeedee-F, etc.
+function genderArtKey(s: string): string {
+  return s.replace(/(^|-)f(?=-|$)/, '$1female').replace(/(^|-)m(?=-|$)/, '$1male');
+}
+
 // Lista de especies ordenadas por número de Pokédex. Incluye las megaevoluciones y
 // las formas regionales justo DESPUÉS de su Pokémon base, con su `artId` (sprite correcto).
 export async function loadSpeciesList(): Promise<Array<[string, DexEntry]>> {
@@ -121,6 +127,7 @@ export async function loadSpeciesList(): Promise<Array<[string, DexEntry]>> {
     const s = slugify(name);
     return (
       formArt.get(s) ??
+      formArt.get(genderArtKey(s)) ??
       formArt.get(`${s}-breed`) ??
       formArt.get(`${s}-standard`) ??
       formArt.get(`${s}-mask`)
@@ -184,7 +191,7 @@ export async function getEvolutionStages(
   // Id de sprite para una forma (misma lógica que la lista: slug + fallbacks).
   const artFor = (name: string): number | undefined => {
     const s = name.toLowerCase().replace(/['’.]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-    return formArt.get(s) ?? formArt.get(`${s}-breed`) ?? formArt.get(`${s}-standard`);
+    return formArt.get(s) ?? formArt.get(genderArtKey(s)) ?? formArt.get(`${s}-breed`) ?? formArt.get(`${s}-standard`);
   };
 
   // Crea un nodo; a las formas (baseSpecies) les asigna su artId para el sprite correcto
