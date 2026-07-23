@@ -17,26 +17,6 @@ Pokédex en español con herramientas competitivas para Android, hecha con Expo 
 - data.pkmn.cc / Smogon (análisis, sets y estadísticas de uso).
 - PokéAPI (traducciones al español, EVs, grupos huevo).
 
-Los datos no competitivos vienen empaquetados en `assets/data/` (generados con `npm run build-data`).
-
-## Desarrollo
-
-```bash
-npm install
-npm start          # servidor de desarrollo (Expo)
-npm run build-data # regenera los JSON offline de assets/data/
-```
-
-## Compilar el APK (EAS Build)
-
-```bash
-npm install -g eas-cli
-eas login
-eas build -p android --profile preview   # genera un .apk instalable
-```
-
-El perfil `production` genera un `.aab` para Google Play. Recuerda subir `versionCode` en `app.json` en cada versión.
-
 ## Stack
 
 Expo SDK 57 · React Native 0.86 · React 19 · TypeScript · React Navigation · @smogon/calc
