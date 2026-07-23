@@ -1,0 +1,13 @@
+# Configuración de pnpm.
+# Por seguridad, pnpm NO ejecuta scripts de instalación de dependencias salvo que se
+# aprueben aquí. dtrace-provider es una dep opcional de macOS (vía eas-cli) que no se
+# necesita en Android/Linux → no se construye.
+allowBuilds:
+  dtrace-provider: false
+
+# eas-cli es muy reciente; pnpm lo excluye del filtro de "edad mínima de publicación".
+minimumReleaseAgeExclude:
+  - '@expo/eas-build-job@21.1.0'
+  - '@expo/eas-json@21.1.0'
+  - '@expo/steps@21.1.0'
+  - eas-cli@21.1.0
